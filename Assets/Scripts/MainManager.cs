@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class MainManager : MonoBehaviour
 {
@@ -11,6 +14,7 @@ public class MainManager : MonoBehaviour
     public Rigidbody Ball;
 
     public Text ScoreText;
+    public Text HighScoreText;
     public GameObject GameOverText;
     
     private bool m_Started = false;
@@ -36,6 +40,11 @@ public class MainManager : MonoBehaviour
                 brick.onDestroyed.AddListener(AddPoint);
             }
         }
+
+        if (ScoreManager.Instance != null)
+        {
+            HighScoreText.text = $"Best Score: {ScoreManager.Instance.topScore.name} : {ScoreManager.Instance.topScore.score}";
+        }
     }
 
     private void Update()
@@ -59,6 +68,14 @@ public class MainManager : MonoBehaviour
             {
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             }
+            else if (Input.GetKeyDown(KeyCode.Escape))
+            {
+            #if UNITY_EDITOR
+                EditorApplication.ExitPlaymode();
+            #else
+                Application.Quit();
+            #endif
+            }
         }
     }
 
@@ -66,11 +83,21 @@ public class MainManager : MonoBehaviour
     {
         m_Points += point;
         ScoreText.text = $"Score : {m_Points}";
+
+        if (ScoreManager.Instance != null)
+        {
+            if (m_Points > ScoreManager.Instance.topScore.score)
+            {
+                HighScoreText.text = $"Best Score: {ScoreManager.Instance.player} : {m_Points}";
+            }
+        }
     }
 
     public void GameOver()
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+        ScoreManager.Instance.UpdateHighScore(m_Points);
+        ScoreManager.Instance.SaveScore();
     }
 }
